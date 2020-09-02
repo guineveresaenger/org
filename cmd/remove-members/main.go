@@ -68,7 +68,7 @@ func getYamlFiles(folder string) []string {
 
 	_, e := os.Stat(folder)
 	if os.IsNotExist(e) {
-		log.Fatal("Folder does not exit.")
+		log.Fatal("Folder does not exist.")
 	}
 
 	// list all the files, accounting for subfolders

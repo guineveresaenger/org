@@ -12,10 +12,9 @@ import (
 
 func main() {
 
-	members := []string{"guineveresaenger", "ameukam"}
-
 	// parse the config directory given the flag configPath
 	configPath := flag.String("configPath", "../../config/", "the path of the config files")
+	cleanupFile := flag.String("inactivemembersfile", "./INACTIVE_MEMBERS", "list of inactive members")
 
 	flag.Parse()
 
@@ -25,7 +24,9 @@ func main() {
 	// open all the yaml files in org/config
 	// walk through the filenames and see if they end in `.yaml`
 	yf := getYamlFiles(*configPath)
-	fmt.Println(members)
+	inactivemembers, _ := parseInactiveMembersFile(*cleanupFile)
+
+	fmt.Println(inactivemembers)
 	fmt.Printf(strings.Join(yf, "\n"))
 
 	// process this data somehow
@@ -58,10 +59,6 @@ func main() {
 	}
 }
 
-func checkForYaml(filename string) bool {
-	return strings.HasSuffix(filename, ".yaml")
-}
-
 func getYamlFiles(folder string) []string {
 	var files []string
 	// error handling in case folder doesn't exist
@@ -84,4 +81,24 @@ func getYamlFiles(folder string) []string {
 		return files
 	}
 	return files
+}
+
+// parseInactiveMembersFile will parse the content of INACTIVE_MEMBERS at the path and returns []string
+
+func parseInactiveMembersFile(path string) ([]string, error) {
+	var inactivemembers []string
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("File reading error %s", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		inactivemembers = append(inactivemembers, line)
+
+	}
+	return inactivemembers, nil
 }

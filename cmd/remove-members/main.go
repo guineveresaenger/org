@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -44,10 +45,11 @@ func main() {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			// compare line to each name in the remove list
-			for _, member := range members {
-				if line == "- "+member {
-					fmt.Println(line, filename)
+			// Check if every line in the scanner matches the regex.
+			for _, member := range inactivemembers {
+				reg := regexp.MustCompile(fmt.Sprintf(`(\s+)?- %s(\s+|\s+?#.*)?$`, member))
+				if reg.MatchString(line) {
+					fmt.Println(reg.String())
 				}
 			}
 		}
@@ -98,7 +100,6 @@ func parseInactiveMembersFile(path string) ([]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		inactivemembers = append(inactivemembers, line)
-
 	}
 	return inactivemembers, nil
 }

@@ -7,15 +7,15 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 func main() {
 
-	members := []string{"guineveresaenger", "ameukam"}
-
 	// parse the config directory given the flag configPath
 	configPath := flag.String("configPath", "../../config/", "the path of the config files")
+	cleanupFile := flag.String("inactivemembersfile", "./INACTIVE_MEMBERS", "list of inactive members")
 
 	flag.Parse()
 
@@ -25,7 +25,9 @@ func main() {
 	// open all the yaml files in org/config
 	// walk through the filenames and see if they end in `.yaml`
 	yf := getYamlFiles(*configPath)
-	fmt.Println(members)
+	inactivemembers, _ := parseInactiveMembersFile(*cleanupFile)
+
+	fmt.Println(inactivemembers)
 	fmt.Printf(strings.Join(yf, "\n"))
 
 	// process this data somehow
@@ -43,10 +45,11 @@ func main() {
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			// compare line to each name in the remove list
-			for _, member := range members {
-				if line == "- "+member {
-					fmt.Println(line, filename)
+			// Check if every line in the scanner matches the regex.
+			for _, member := range inactivemembers {
+				reg := regexp.MustCompile(fmt.Sprintf(`(\s+)?- %s(\s+|\s+?#.*)?$`, member))
+				if reg.MatchString(line) {
+					fmt.Println(reg.String())
 				}
 			}
 		}
@@ -56,10 +59,6 @@ func main() {
 			return
 		}
 	}
-}
-
-func checkForYaml(filename string) bool {
-	return strings.HasSuffix(filename, ".yaml")
 }
 
 func getYamlFiles(folder string) []string {
@@ -84,4 +83,23 @@ func getYamlFiles(folder string) []string {
 		return files
 	}
 	return files
+}
+
+// parseInactiveMembersFile will parse the content of INACTIVE_MEMBERS at the path and returns []string
+
+func parseInactiveMembersFile(path string) ([]string, error) {
+	var inactivemembers []string
+
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("File reading error %s", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		inactivemembers = append(inactivemembers, line)
+	}
+	return inactivemembers, nil
 }
